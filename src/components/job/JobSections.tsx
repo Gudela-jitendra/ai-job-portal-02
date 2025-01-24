@@ -41,44 +41,56 @@ export const JobSections = ({
       case "oldest":
         return [...jobsToSort].sort((a, b) => a.postedDate - b.postedDate);
       case "recommended":
-        return sortByRecommendation(jobsToSort);
+        return getRecommendedJobs(jobsToSort);
       default:
         return jobsToSort;
     }
   };
 
-  const sortByRecommendation = (jobsToSort: Job[]) => {
+  const getRecommendedJobs = (jobsToFilter: Job[]) => {
     const userProfile = getUserProfile();
     
-    if (!userProfile?.skills?.length) {
-      return [...jobsToSort].sort((a, b) => {
-        const engagementA = a.likeCount + a.comments.length;
-        const engagementB = b.likeCount + b.comments.length;
-        return engagementB - engagementA;
-      });
+    if (!userProfile) {
+      console.log("No user profile found for recommendations");
+      return [];
     }
 
-    return [...jobsToSort].sort((a, b) => {
-      const skillMatchesA = a.requiredSkills.filter(skill => 
-        userProfile.skills.includes(skill.toLowerCase())
-      ).length;
-      const skillMatchesB = b.requiredSkills.filter(skill => 
-        userProfile.skills.includes(skill.toLowerCase())
-      ).length;
-      
-      if (skillMatchesB !== skillMatchesA) {
-        return skillMatchesB - skillMatchesA;
-      }
-      
-      const engagementA = a.likeCount + a.comments.length;
-      const engagementB = b.likeCount + b.comments.length;
-      return engagementB - engagementA;
+    // Convert profile data to lowercase for better matching
+    const userSkills = userProfile.skills.map((skill: string) => skill.toLowerCase());
+    const userExperience = parseFloat(userProfile.experience) || 0;
+
+    console.log("User Profile:", {
+      skills: userSkills,
+      experience: userExperience
+    });
+
+    return jobsToFilter.filter(job => {
+      // Match skills
+      const jobSkills = job.requiredSkills.map(skill => skill.toLowerCase());
+      const hasMatchingSkills = jobSkills.some(skill => 
+        userSkills.some(userSkill => userSkill.includes(skill) || skill.includes(userSkill))
+      );
+
+      // Match experience
+      const jobExperience = job.experienceRequired.years;
+      const isExperienceMatch = Math.abs(userExperience - jobExperience) <= 2; // Within 2 years range
+
+      console.log("Job Match Analysis:", {
+        jobTitle: job.title,
+        jobSkills,
+        hasMatchingSkills,
+        jobExperience,
+        isExperienceMatch
+      });
+
+      // Return true if either skills match or experience matches
+      return hasMatchingSkills || isExperienceMatch;
     });
   };
 
   const filteredJobs = filterJobs(jobs);
   const sortedJobs = sortJobs(filteredJobs);
-  const recommendedJobs = sortByRecommendation(filteredJobs);
+  const recommendedJobs = getRecommendedJobs(filteredJobs);
   const userProfile = getUserProfile();
 
   return (
