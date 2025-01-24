@@ -4,16 +4,9 @@ import { WelcomeHeader } from "@/components/WelcomeHeader";
 import { JobList } from "@/components/JobList";
 import { useQuery } from "@tanstack/react-query";
 import { fetchJobs } from "@/services/jobService";
-import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { Job } from "@/types/job";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ListFilter } from "lucide-react";
+import { JobFilters } from "@/components/job/JobFilters";
+import { JobSections } from "@/components/job/JobSections";
 
 const Index = () => {
   const { toast } = useToast();
@@ -45,56 +38,6 @@ const Index = () => {
     }
   };
 
-  const getUserProfile = () => {
-    const profile = localStorage.getItem('userProfile');
-    return profile ? JSON.parse(profile) : null;
-  };
-
-  const sortJobs = (jobsToSort: Job[]) => {
-    switch (sortOrder) {
-      case "newest":
-        return [...jobsToSort].sort((a, b) => b.postedDate - a.postedDate);
-      case "oldest":
-        return [...jobsToSort].sort((a, b) => a.postedDate - b.postedDate);
-      case "recommended":
-        return sortByRecommendation(jobsToSort);
-      default:
-        return jobsToSort;
-    }
-  };
-
-  const sortByRecommendation = (jobsToSort: Job[]) => {
-    const userProfile = getUserProfile();
-    
-    if (!userProfile?.skills?.length) {
-      // If no profile, sort by engagement (likes + comments)
-      return [...jobsToSort].sort((a, b) => {
-        const engagementA = a.likeCount + a.comments.length;
-        const engagementB = b.likeCount + b.comments.length;
-        return engagementB - engagementA;
-      });
-    }
-
-    // If profile exists, prioritize skill matches
-    return [...jobsToSort].sort((a, b) => {
-      const skillMatchesA = a.requiredSkills.filter(skill => 
-        userProfile.skills.includes(skill.toLowerCase())
-      ).length;
-      const skillMatchesB = b.requiredSkills.filter(skill => 
-        userProfile.skills.includes(skill.toLowerCase())
-      ).length;
-      
-      if (skillMatchesB !== skillMatchesA) {
-        return skillMatchesB - skillMatchesA;
-      }
-      
-      // If same number of skill matches, sort by engagement
-      const engagementA = a.likeCount + a.comments.length;
-      const engagementB = b.likeCount + b.comments.length;
-      return engagementB - engagementA;
-    });
-  };
-
   if (isLoading) {
     return (
       <div className="container py-8 flex justify-center items-center">
@@ -111,18 +54,6 @@ const Index = () => {
     );
   }
 
-  const filteredJobs = searchQuery
-    ? jobs.filter(job =>
-        job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        job.description.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : jobs;
-
-  const sortedJobs = sortJobs(filteredJobs);
-  const userProfile = getUserProfile();
-  const recommendedJobs = sortByRecommendation(jobs);
-
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <div className="container py-8 animate-fade-in">
@@ -131,60 +62,14 @@ const Index = () => {
           onFilterClick={() => {}}
         />
         
-        {!userProfile && (
-          <div className="mb-8 p-4 bg-purple-500/10 rounded-lg text-center">
-            <h2 className="text-2xl font-bold mb-2">Get Personalized Job Recommendations</h2>
-            <p className="mb-4">Complete your profile to receive job recommendations tailored to your skills and experience.</p>
-            <Link to="/profile">
-              <Button variant="default">Update Profile</Button>
-            </Link>
-          </div>
-        )}
-
-        <div className="mb-6 flex justify-between items-center">
-          <div className="flex gap-4">
-            <Button
-              variant={activeSection === "all" ? "default" : "outline"}
-              onClick={() => setActiveSection("all")}
-            >
-              All Jobs
-            </Button>
-            <Button
-              variant={activeSection === "recommended" ? "default" : "outline"}
-              onClick={() => setActiveSection("recommended")}
-            >
-              Recommended
-            </Button>
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <ListFilter className="w-4 h-4" />
-                Filters
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => setSortOrder("newest")}>
-                Newest First
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOrder("oldest")}>
-                Oldest First
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOrder("recommended")}>
-                Recommended
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <div className="space-y-8">
-          {activeSection === "recommended" ? (
-            <JobList jobs={recommendedJobs} />
-          ) : (
-            <JobList jobs={sortedJobs} />
-          )}
-        </div>
+        <JobSections
+          jobs={jobs}
+          searchQuery={searchQuery}
+          sortOrder={sortOrder}
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+          onSortOrderChange={setSortOrder}
+        />
       </div>
     </div>
   );
