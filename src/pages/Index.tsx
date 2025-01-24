@@ -7,11 +7,19 @@ import { fetchJobs } from "@/services/jobService";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Job } from "@/types/job";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ListFilter } from "lucide-react";
 
 const Index = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "recommended">("recommended");
+  const [activeSection, setActiveSection] = useState<"all" | "recommended">("all");
 
   const { data: jobs = [], isLoading, error } = useQuery({
     queryKey: ['jobs'],
@@ -35,13 +43,6 @@ const Index = () => {
         variant: "destructive"
       });
     }
-  };
-
-  const handleFilterClick = () => {
-    toast({
-      title: "Sort Order Changed",
-      description: `Jobs are now sorted by: ${sortOrder}`,
-    });
   };
 
   const getUserProfile = () => {
@@ -120,14 +121,14 @@ const Index = () => {
 
   const sortedJobs = sortJobs(filteredJobs);
   const userProfile = getUserProfile();
-  const recommendedJobs = sortByRecommendation(jobs).slice(0, 4); // Show top 4 recommended jobs
+  const recommendedJobs = sortByRecommendation(jobs);
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       <div className="container py-8 animate-fade-in">
         <WelcomeHeader 
           onSearch={handleSearch}
-          onFilterClick={handleFilterClick}
+          onFilterClick={() => {}}
         />
         
         {!userProfile && (
@@ -140,38 +141,50 @@ const Index = () => {
           </div>
         )}
 
-        <div className="mb-6 flex justify-end gap-2">
-          <Button
-            variant={sortOrder === "recommended" ? "default" : "outline"}
-            onClick={() => setSortOrder("recommended")}
-          >
-            Recommended
-          </Button>
-          <Button
-            variant={sortOrder === "newest" ? "default" : "outline"}
-            onClick={() => setSortOrder("newest")}
-          >
-            Newest First
-          </Button>
-          <Button
-            variant={sortOrder === "oldest" ? "default" : "outline"}
-            onClick={() => setSortOrder("oldest")}
-          >
-            Oldest First
-          </Button>
+        <div className="mb-6 flex justify-between items-center">
+          <div className="flex gap-4">
+            <Button
+              variant={activeSection === "all" ? "default" : "outline"}
+              onClick={() => setActiveSection("all")}
+            >
+              All Jobs
+            </Button>
+            <Button
+              variant={activeSection === "recommended" ? "default" : "outline"}
+              onClick={() => setActiveSection("recommended")}
+            >
+              Recommended
+            </Button>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <ListFilter className="w-4 h-4" />
+                Filters
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => setSortOrder("newest")}>
+                Newest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOrder("oldest")}>
+                Oldest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOrder("recommended")}>
+                Recommended
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
-        {/* Recommended Jobs Section */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-bold mb-6">Recommended Jobs</h2>
-          <JobList jobs={recommendedJobs} />
-        </section>
-
-        {/* All Jobs Section */}
-        <section>
-          <h2 className="text-3xl font-bold mb-6">All Jobs</h2>
-          <JobList jobs={sortedJobs} />
-        </section>
+        <div className="space-y-8">
+          {activeSection === "recommended" ? (
+            <JobList jobs={recommendedJobs} />
+          ) : (
+            <JobList jobs={sortedJobs} />
+          )}
+        </div>
       </div>
     </div>
   );
