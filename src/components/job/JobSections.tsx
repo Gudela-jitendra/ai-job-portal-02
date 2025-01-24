@@ -4,6 +4,7 @@ import { JobList } from "@/components/JobList";
 import { JobFilters } from "./JobFilters";
 import { getRecommendedJobs } from "./JobRecommendationEngine";
 import { filterJobs, sortJobs } from "./JobFilterEngine";
+import { useEffect, useState } from "react";
 
 interface JobSectionsProps {
   jobs: Job[];
@@ -22,15 +23,31 @@ export const JobSections = ({
   onSectionChange,
   onSortOrderChange
 }: JobSectionsProps) => {
-  const getUserProfile = () => {
-    const profile = localStorage.getItem('userProfile');
-    return profile ? JSON.parse(profile) : null;
-  };
+  const [userProfile, setUserProfile] = useState<any>(null);
 
-  const userProfile = getUserProfile();
+  useEffect(() => {
+    const profile = localStorage.getItem('userProfile');
+    if (profile) {
+      setUserProfile(JSON.parse(profile));
+    }
+  }, []);
+
+  // Listen for changes in localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const profile = localStorage.getItem('userProfile');
+      if (profile) {
+        setUserProfile(JSON.parse(profile));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const filteredJobs = filterJobs(jobs, searchQuery);
   const sortedJobs = sortJobs(filteredJobs, sortOrder);
-  const recommendedJobs = getRecommendedJobs(filteredJobs, userProfile);
+  const recommendedJobs = userProfile ? getRecommendedJobs(filteredJobs, userProfile) : [];
 
   return (
     <div className="space-y-8">
@@ -69,7 +86,9 @@ export const JobSections = ({
               </Button>
             </div>
           )}
-          <JobList jobs={recommendedJobs} />
+          {userProfile && recommendedJobs.length > 0 && (
+            <JobList jobs={recommendedJobs} />
+          )}
         </div>
       )}
     </div>

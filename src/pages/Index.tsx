@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { WelcomeHeader } from "@/components/WelcomeHeader";
-import { JobList } from "@/components/JobList";
 import { useQuery } from "@tanstack/react-query";
 import { fetchJobs } from "@/services/jobService";
-import { Job } from "@/types/job";
-import { JobFilters } from "@/components/job/JobFilters";
 import { JobSections } from "@/components/job/JobSections";
 
 const Index = () => {
@@ -47,6 +44,11 @@ const Index = () => {
   }
 
   if (error) {
+    toast({
+      title: "Error loading jobs",
+      description: "Please try again later",
+      variant: "destructive"
+    });
     return (
       <div className="container py-8 text-center text-red-500">
         Error loading jobs. Please try again later.
