@@ -39,8 +39,8 @@ const Index = () => {
 
   const handleFilterClick = () => {
     toast({
-      title: "Filters",
-      description: "Filter functionality coming soon!",
+      title: "Sort Order Changed",
+      description: `Jobs are now sorted by: ${sortOrder}`,
     });
   };
 
@@ -120,6 +120,7 @@ const Index = () => {
 
   const sortedJobs = sortJobs(filteredJobs);
   const userProfile = getUserProfile();
+  const recommendedJobs = sortByRecommendation(jobs).slice(0, 4); // Show top 4 recommended jobs
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -160,7 +161,17 @@ const Index = () => {
           </Button>
         </div>
 
-        <JobList jobs={sortedJobs} />
+        {/* Recommended Jobs Section */}
+        <section className="mb-12">
+          <h2 className="text-3xl font-bold mb-6">Recommended Jobs</h2>
+          <JobList jobs={recommendedJobs} />
+        </section>
+
+        {/* All Jobs Section */}
+        <section>
+          <h2 className="text-3xl font-bold mb-6">All Jobs</h2>
+          <JobList jobs={sortedJobs} />
+        </section>
       </div>
     </div>
   );
