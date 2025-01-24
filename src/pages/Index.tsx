@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { WelcomeHeader } from "@/components/WelcomeHeader";
 import { useQuery } from "@tanstack/react-query";
 import { fetchJobs } from "@/services/jobService";
@@ -11,9 +11,11 @@ const Index = () => {
   const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "recommended">("recommended");
   const [activeSection, setActiveSection] = useState<"all" | "recommended">("all");
 
-  const { data: jobs = [], isLoading, error } = useQuery({
+  const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['jobs'],
     queryFn: fetchJobs,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const handleSearch = (query: string) => {
@@ -39,19 +41,6 @@ const Index = () => {
     return (
       <div className="container py-8 flex justify-center items-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    toast({
-      title: "Error loading jobs",
-      description: "Please try again later",
-      variant: "destructive"
-    });
-    return (
-      <div className="container py-8 text-center text-red-500">
-        Error loading jobs. Please try again later.
       </div>
     );
   }
