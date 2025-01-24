@@ -36,7 +36,7 @@ export const UserProfileForm = () => {
     defaultValues: {
       fullName: parsedProfile.fullName || "",
       email: parsedProfile.email || "",
-      skills: parsedProfile.skills?.join(", ") || "",
+      skills: Array.isArray(parsedProfile.skills) ? parsedProfile.skills.join(", ") : "",
       experience: parsedProfile.experience || "",
       education: parsedProfile.education || "",
       careerGoals: parsedProfile.careerGoals || "",
@@ -46,7 +46,7 @@ export const UserProfileForm = () => {
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const profileData = {
       ...values,
-      skills: values.skills.split(",").map(skill => skill.trim()),
+      skills: values.skills.toLowerCase().split(",").map(skill => skill.trim()),
       updatedAt: new Date().toISOString(),
     };
     
@@ -100,7 +100,7 @@ export const UserProfileForm = () => {
               <FormLabel>Skills (comma-separated)</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="React, TypeScript, Node.js, etc."
+                  placeholder="react, typescript, node.js, etc."
                   {...field}
                 />
               </FormControl>
