@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Job } from "@/types/job";
 import { JobList } from "@/components/JobList";
 import { JobFilters } from "./JobFilters";
+import { toast } from "@/components/ui/use-toast";
 
 interface JobSectionsProps {
   jobs: Job[];
@@ -52,6 +53,11 @@ export const JobSections = ({
     
     if (!userProfile) {
       console.log("No user profile found for recommendations");
+      toast({
+        title: "Profile Required",
+        description: "Please complete your profile to see job recommendations",
+        variant: "destructive"
+      });
       return [];
     }
 
@@ -64,28 +70,48 @@ export const JobSections = ({
       experience: userExperience
     });
 
-    return jobsToFilter.filter(job => {
-      // Match skills
+    const recommendedJobs = jobsToFilter.filter(job => {
+      // Match skills (more strict matching)
       const jobSkills = job.requiredSkills.map(skill => skill.toLowerCase());
-      const hasMatchingSkills = jobSkills.some(skill => 
-        userSkills.some(userSkill => userSkill.includes(skill) || skill.includes(userSkill))
+      const matchingSkills = jobSkills.filter(jobSkill => 
+        userSkills.some(userSkill => 
+          jobSkill === userSkill || // Exact match
+          jobSkill.includes(userSkill) || // Job skill contains user skill
+          userSkill.includes(jobSkill) // User skill contains job skill
+        )
       );
+      
+      const skillMatchPercentage = matchingSkills.length / jobSkills.length;
+      const hasMatchingSkills = skillMatchPercentage >= 0.3; // At least 30% skill match
 
-      // Match experience
+      // Match experience (more precise range)
       const jobExperience = job.experienceRequired.years;
       const isExperienceMatch = Math.abs(userExperience - jobExperience) <= 2; // Within 2 years range
 
       console.log("Job Match Analysis:", {
         jobTitle: job.title,
         jobSkills,
+        matchingSkills,
+        skillMatchPercentage,
         hasMatchingSkills,
+        userExperience,
         jobExperience,
         isExperienceMatch
       });
 
-      // Return true if either skills match or experience matches
-      return hasMatchingSkills || isExperienceMatch;
+      // Return true only if BOTH skills AND experience match
+      return hasMatchingSkills && isExperienceMatch;
     });
+
+    if (recommendedJobs.length === 0) {
+      toast({
+        title: "No Matching Jobs",
+        description: "No jobs match your current profile. Try updating your skills or experience.",
+        variant: "destructive"
+      });
+    }
+
+    return recommendedJobs;
   };
 
   const filteredJobs = filterJobs(jobs);
